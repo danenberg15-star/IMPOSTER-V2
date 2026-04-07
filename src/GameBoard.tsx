@@ -89,7 +89,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
     } else {
       const currentScore = gameData.players[playerId].score || 0;
       await update(ref(db, `rooms/${roomId}`), {
-        [`players/${playerId}/score`]: Math.max(0, currentScore - 20),
+        // הוסר עיגול הניקוד לאפס - הניקוד יכול לרדת למינוס
+        [`players/${playerId}/score`]: currentScore - 20,
         [`game/roundDeltas/${playerId}`]: -20,
         [`game/playersOut/${playerId}`]: true
       });
@@ -112,7 +113,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
       const updates: any = {
         "meta/status": 'round_over',
         "meta/lastWinner": 'הַמִּתְחַזֶּה טָעָה בַּמָּקוֹם! הַשְּׁאָר נִיצְּחוּ.',
-        [`players/${playerId}/score`]: Math.max(0, currentScore - 20),
+        // הוסר עיגול הניקוד לאפס - הניקוד יכול לרדת למינוס
+        [`players/${playerId}/score`]: currentScore - 20,
         [`game/roundDeltas/${playerId}`]: -20
       };
 
