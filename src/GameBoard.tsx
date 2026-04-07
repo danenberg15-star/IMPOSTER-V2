@@ -202,7 +202,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
         </div>
       </div>
 
-      {/* תמונת המיקום - הגדלה משמעותית לפורמט ריבועי */}
+      {/* תמונת המיקום / תצוגת מתחזה - מקסימום שטח לאייקון */}
       <div className="w-full max-w-md aspect-square rounded-[3rem] overflow-hidden shadow-2xl mb-6 border border-white/10 bg-slate-900 relative">
         {!myRole.isImposter ? (
           <>
@@ -213,10 +213,13 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
             </div>
           </>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-rose-950/20">
-            <img src="/icon.png" className="w-32 h-32 rounded-3xl shadow-[0_0_50px_rgba(225,29,72,0.4)] border-2 border-rose-500/30 mb-8 animate-pulse" alt="imposter icon" />
-            <h2 className="text-5xl font-black text-white tracking-tighter uppercase italic drop-shadow-lg">אַתָּה הַמִּתְחַזֶּה</h2>
-            <p className="text-rose-200/40 text-lg mt-4 font-medium italic">הישאר רגוע... אף אחד לא יודע.</p>
+          <div className="w-full h-full flex items-center justify-center p-6 bg-rose-950/20">
+            {/* האייקון הוגדל למקסימום המקום בתוך המסגרת ללא טקסט */}
+            <img 
+              src="/icon.png" 
+              className="w-full h-full max-w-[85%] max-h-[85%] object-contain rounded-[3.5rem] shadow-[0_0_60px_rgba(225,29,72,0.4)] border-2 border-rose-500/20 animate-pulse" 
+              alt="imposter icon" 
+            />
           </div>
         )}
       </div>
