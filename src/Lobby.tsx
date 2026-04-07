@@ -77,13 +77,14 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinRoom }) => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 p-6 text-center" dir="rtl">
-      <div className="w-full max-w-md space-y-8">
-        <div className="flex flex-col items-center gap-4 mb-4">
-          <img src="/icon.png" className="w-24 h-24 rounded-3xl shadow-2xl border-4 border-white/10" alt="logo" />
+      <div className="w-full max-w-md space-y-10">
+        <div className="flex flex-col items-center gap-6">
+          {/* אייקון מוגדל משמעותית */}
+          <img src="/icon.png" className="w-48 h-48 rounded-[3.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-4 border-white/10" alt="logo" />
           <h1 className="text-5xl font-black text-white tracking-tighter italic">הַמִּתְחַזֶּה</h1>
         </div>
 
-        <div className="bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-white/10 p-8 shadow-2xl space-y-6">
+        <div className="bg-slate-900/50 backdrop-blur-xl rounded-[3rem] border border-white/10 p-8 shadow-2xl space-y-6">
           <input
             type="text"
             placeholder="איך קוראים לך?"
@@ -102,7 +103,7 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinRoom }) => {
 
           <input
             type="text"
-            placeholder="קוד חדר (למשל: חתול25)"
+            placeholder="קוד חדר"
             className="w-full p-5 text-xl bg-white/5 border border-white/10 rounded-2xl outline-none text-center text-white placeholder-white/20 focus:border-amber-500/50 transition-all"
             value={code}
             onChange={(e) => setCode(e.target.value)}

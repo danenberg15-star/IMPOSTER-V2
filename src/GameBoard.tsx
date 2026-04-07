@@ -17,12 +17,10 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
       if (snap.exists()) {
         const data = snap.val();
         setGameData(data);
-        
         if (data.meta.status === 'playing') {
           const playersArr = Object.values(data.players || {});
           const outCount = Object.keys(data.game?.playersOut || {}).length;
           const activeCount = playersArr.length - outCount;
-
           if (isHost && activeCount <= 2 && data.meta.status !== 'round_over') {
             handleImposterWinByElimination(data);
           }
@@ -60,7 +58,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
       if (p.id === imposterId) roles[p.id] = { role: "הַמִּתְחַזֶּה", isImposter: true };
       else roles[p.id] = { role: randomSituation.roles[Math.floor(Math.random() * randomSituation.roles.length)], isImposter: false };
     });
-
     await update(ref(db, `rooms/${roomId}`), {
       "meta/status": 'playing',
       "meta/currentSituation": randomSituation,
@@ -75,7 +72,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
     setShowVoteModal(false);
     const isTargetImposter = gameData.game.roles[targetId].isImposter;
     const currentScore = gameData.players[playerId].score || 0;
-    
     if (isTargetImposter) {
       await update(ref(db, `rooms/${roomId}`), {
         [`players/${playerId}/score`]: currentScore + 40,
@@ -96,7 +92,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
     setShowGuessModal(false);
     const isCorrect = sitId === situation.id;
     const currentScore = gameData.players[playerId].score || 0;
-
     if (isCorrect) {
       await update(ref(db, `rooms/${roomId}`), {
         [`players/${playerId}/score`]: currentScore + 40,
@@ -134,9 +129,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
         <Trophy size={120} className="text-amber-400 mb-6 drop-shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
         <h1 className="text-5xl font-black text-white mb-2 tracking-tighter">הַמְּנַצֵּחַ הַגָּדוֹל</h1>
         <p className="text-6xl font-bold text-amber-400 mb-12 drop-shadow-sm">{winner.name}</p>
-        <button onClick={handleFinalExit} className="relative z-10 bg-white text-slate-950 font-bold text-xl py-4 px-12 rounded-full shadow-2xl active:scale-95 transition-all">
-          סיום משחק
-        </button>
+        <button onClick={handleFinalExit} className="relative z-10 bg-white text-slate-950 font-bold text-xl py-4 px-12 rounded-full shadow-2xl active:scale-95 transition-all">סיום משחק</button>
       </div>
     );
   }
@@ -198,8 +191,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-slate-950 p-4 pb-10" dir="rtl">
-      {/* Header עם לוגו */}
-      <div className="w-full max-w-md flex items-center justify-between py-4 px-2 mb-4">
+      {/* Header */}
+      <div className="w-full max-w-md flex items-center justify-between py-4 px-2 mb-2">
         <div className="flex items-center gap-2">
            <img src="/icon.png" className="w-8 h-8 rounded-lg" alt="logo" />
            <span className="text-white font-black tracking-tighter text-xl">הַמִּתְחַזֶּה</span>
@@ -209,41 +202,39 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
         </div>
       </div>
 
-      {/* תמונת המיקום / תצוגת מתחזה משודרגת */}
-      <div className="w-full max-w-md aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl mb-8 border border-white/10 bg-slate-900 relative">
+      {/* תמונת המיקום - הגדלה משמעותית לפורמט ריבועי */}
+      <div className="w-full max-w-md aspect-square rounded-[3rem] overflow-hidden shadow-2xl mb-6 border border-white/10 bg-slate-900 relative">
         {!myRole.isImposter ? (
           <>
             <img src={situation.imageUrl} className="w-full h-full object-cover opacity-80" alt="situation" />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
-            <div className="absolute bottom-6 right-8 left-8">
-               <h1 className="text-4xl font-black text-white tracking-tight drop-shadow-md">{situation.name}</h1>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
+            <div className="absolute inset-0 flex flex-col items-center justify-end pb-12 px-6 text-center">
+               <h1 className="text-5xl font-black text-white tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">{situation.name}</h1>
             </div>
           </>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-rose-950/20">
-            <img src="/icon.png" className="w-24 h-24 rounded-3xl shadow-[0_0_40px_rgba(225,29,72,0.3)] border-2 border-rose-500/30 mb-6 animate-pulse" alt="imposter icon" />
-            <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic">אַתָּה הַמִּתְחַזֶּה</h2>
-            <p className="text-rose-200/40 text-sm mt-3 font-medium">הישאר רגוע ונסה לגלות היכן אתם נמצאים</p>
+            <img src="/icon.png" className="w-32 h-32 rounded-3xl shadow-[0_0_50px_rgba(225,29,72,0.4)] border-2 border-rose-500/30 mb-8 animate-pulse" alt="imposter icon" />
+            <h2 className="text-5xl font-black text-white tracking-tighter uppercase italic drop-shadow-lg">אַתָּה הַמִּתְחַזֶּה</h2>
+            <p className="text-rose-200/40 text-lg mt-4 font-medium italic">הישאר רגוע... אף אחד לא יודע.</p>
           </div>
         )}
       </div>
 
-      {/* כרטיס תפקיד */}
+      {/* כרטיס תפקיד - מרכוז מלא */}
       <div className="w-full max-w-md">
-        <div className={`relative p-8 rounded-[2.5rem] border backdrop-blur-md overflow-hidden ${
+        <div className={`relative p-8 rounded-[3rem] border backdrop-blur-md overflow-hidden text-center ${
           myRole.isImposter 
-          ? 'bg-rose-500/5 border-rose-500/20 text-rose-500 shadow-[inset_0_0_20px_rgba(225,29,72,0.05)]' 
-          : 'bg-indigo-500/5 border-indigo-500/20 text-indigo-400 shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]'
+          ? 'bg-rose-500/5 border-rose-500/20 text-rose-500 shadow-[inset_0_0_30px_rgba(225,29,72,0.1)]' 
+          : 'bg-indigo-500/5 border-indigo-500/20 text-indigo-400 shadow-[inset_0_0_30px_rgba(99,102,241,0.1)]'
         }`}>
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-40 mb-2">זהות נוכחית</p>
-              <p className="text-4xl font-black tracking-tighter leading-tight text-white">
-                {myRole.role}
-              </p>
-            </div>
-            <div className={`p-3 rounded-2xl ${myRole.isImposter ? 'bg-rose-500/20 text-rose-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
-              {myRole.isImposter ? <AlertTriangle size={28} /> : <ShieldCheck size={28} />}
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-xs font-bold uppercase tracking-[0.3em] opacity-40 mb-1">הזהות הסודית שלך</p>
+            <div className="flex items-center justify-center gap-4">
+              <p className="text-4xl font-black tracking-tighter leading-tight text-white">{myRole.role}</p>
+              <div className={`p-2 rounded-xl ${myRole.isImposter ? 'bg-rose-500/20 text-rose-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
+                {myRole.isImposter ? <AlertTriangle size={24} /> : <ShieldCheck size={24} />}
+              </div>
             </div>
           </div>
         </div>
