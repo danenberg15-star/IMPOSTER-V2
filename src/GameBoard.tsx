@@ -39,7 +39,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
         [`players/${imposterId}/score`]: currentScore + 40,
         [`game/roundDeltas/${imposterId}`]: 40,
         "meta/status": 'round_over',
-        "meta/lastWinner": 'הַמִּתְחַזֶּה נִיצֵּחַ! הַצַּוָּת חוסל.'
+        "meta/lastWinner": 'הַמִּתְחַזֶּה נִיצֵּחַ! הַצַּוָּת חוּסַל.'
       });
     }
   };
@@ -81,7 +81,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
         [`players/${playerId}/score`]: currentScore + 40,
         [`game/roundDeltas/${playerId}`]: 40,
         "meta/status": 'round_over',
-        "meta/lastWinner": `המשימה הושלמה! המתחזה נחשף ע"י ${gameData.players[playerId].name}.`
+        "meta/lastWinner": `הַמִּתְחַזֶּה נֶחְשַׂף עַל יְדֵי ${gameData.players[playerId].name}!`
       });
     } else {
       await update(ref(db, `rooms/${roomId}`), {
@@ -102,12 +102,12 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
         [`players/${playerId}/score`]: currentScore + 40,
         [`game/roundDeltas/${playerId}`]: 40,
         "meta/status": 'round_over',
-        "meta/lastWinner": 'הַמִּתְחַזֶּה נִיצֵּחַ! הוא ידע בדיוק איפה אתם.'
+        "meta/lastWinner": 'הַמִּתְחַזֶּה נִיצֵּחַ! הוּא יָדַע בְּדִיּוּק אֵיפֹה אַתֶּם.'
       });
     } else {
       const updates: any = {
         "meta/status": 'round_over',
-        "meta/lastWinner": 'הַמִּתְחַזֶּה נכשל בזיהוי המיקום! ניצחון לצוות.',
+        "meta/lastWinner": 'הַמִּתְחַזֶּה טָעָה בַּמָּקוֹם! נִיצָּחוֹן לַצֶּוֶת.',
         [`players/${playerId}/score`]: currentScore - 20,
         [`game/roundDeltas/${playerId}`]: -20
       };
@@ -127,7 +127,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
     window.location.reload();
   };
 
-  // תצוגת ניצחון סופי
   if (winner) {
     return (
       <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center p-6 z-[100] text-center" dir="rtl">
@@ -142,7 +141,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
     );
   }
 
-  // תצוגת סיכום סיבוב (Leaderboard)
   if (gameData.meta.status === 'round_over') {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-white" dir="rtl">
@@ -184,7 +182,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
     );
   }
 
-  // תצוגת פסול (Out)
   if (isOut) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-8 text-center" dir="rtl">
@@ -192,14 +189,13 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
           <div className="bg-rose-500/20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
             <X size={60} className="text-rose-500" />
           </div>
-          <h1 className="text-4xl font-black text-white mb-3 tracking-tighter uppercase">הודחת!</h1>
-          <p className="text-rose-200/60 font-medium">האשמת שווא עלתה לך ביוקר.</p>
+          <h1 className="text-4xl font-black text-white mb-3 tracking-tighter uppercase">הוּדַחְתָּ!</h1>
+          <p className="text-rose-200/60 font-medium italic text-lg">טעות בזיהוי עלתה לך ביוקר...</p>
         </div>
       </div>
     );
   }
 
-  // תצוגת המשחק המרכזית
   return (
     <div className="flex flex-col items-center min-h-screen bg-slate-950 p-4 pb-10" dir="rtl">
       {/* Header עם לוגו */}
@@ -213,8 +209,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
         </div>
       </div>
 
-      {/* תמונת המיקום */}
-      <div className="w-full max-w-md aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl mb-8 border border-white/10 bg-slate-900 relative group">
+      {/* תמונת המיקום / תצוגת מתחזה משודרגת */}
+      <div className="w-full max-w-md aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl mb-8 border border-white/10 bg-slate-900 relative">
         {!myRole.isImposter ? (
           <>
             <img src={situation.imageUrl} className="w-full h-full object-cover opacity-80" alt="situation" />
@@ -224,12 +220,10 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
             </div>
           </>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center">
-            <div className="bg-rose-500/20 w-20 h-20 rounded-full flex items-center justify-center mb-4">
-              <EyeOff size={40} className="text-rose-500" />
-            </div>
-            <h2 className="text-2xl font-black text-white italic tracking-tighter">הַמָּקוֹם חָסוּי</h2>
-            <p className="text-rose-200/40 text-sm mt-2">נסה לגלות איפה כולם נמצאים לפי השאלות שלהם</p>
+          <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-rose-950/20">
+            <img src="/icon.png" className="w-24 h-24 rounded-3xl shadow-[0_0_40px_rgba(225,29,72,0.3)] border-2 border-rose-500/30 mb-6 animate-pulse" alt="imposter icon" />
+            <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic">אַתָּה הַמִּתְחַזֶּה</h2>
+            <p className="text-rose-200/40 text-sm mt-3 font-medium">הישאר רגוע ונסה לגלות היכן אתם נמצאים</p>
           </div>
         )}
       </div>
@@ -238,17 +232,19 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
       <div className="w-full max-w-md">
         <div className={`relative p-8 rounded-[2.5rem] border backdrop-blur-md overflow-hidden ${
           myRole.isImposter 
-          ? 'bg-rose-500/5 border-rose-500/20 text-rose-500' 
-          : 'bg-indigo-500/5 border-indigo-500/20 text-indigo-400'
+          ? 'bg-rose-500/5 border-rose-500/20 text-rose-500 shadow-[inset_0_0_20px_rgba(225,29,72,0.05)]' 
+          : 'bg-indigo-500/5 border-indigo-500/20 text-indigo-400 shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]'
         }`}>
-          <div className="flex justify-between items-start mb-4">
+          <div className="flex justify-between items-start mb-2">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-50 mb-1">זהות נוכחית</p>
-              <p className={`text-4xl font-black tracking-tighter leading-none ${myRole.isImposter ? 'text-white' : 'text-white'}`}>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-40 mb-2">זהות נוכחית</p>
+              <p className="text-4xl font-black tracking-tighter leading-tight text-white">
                 {myRole.role}
               </p>
             </div>
-            {myRole.isImposter ? <AlertTriangle size={32} /> : <ShieldCheck size={32} />}
+            <div className={`p-3 rounded-2xl ${myRole.isImposter ? 'bg-rose-500/20 text-rose-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
+              {myRole.isImposter ? <AlertTriangle size={28} /> : <ShieldCheck size={28} />}
+            </div>
           </div>
         </div>
 
@@ -266,19 +262,19 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
         </div>
       </div>
 
-      {/* מודאלים מעוצבים - Dark Glass */}
+      {/* מודאלים */}
       {showVoteModal && (
         <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-6 z-[60]">
           <div className="bg-slate-900 w-full max-w-sm rounded-[3rem] p-8 border border-white/10 shadow-2xl">
             <h2 className="text-2xl font-black mb-6 text-white text-center italic tracking-tighter uppercase">בחר את החשוד</h2>
-            <div className="grid gap-2">
+            <div className="grid gap-2 overflow-y-auto max-h-[50vh] pr-2 custom-scrollbar">
               {players.filter(p => p.id !== playerId && !gameData.game.playersOut?.[p.id]).map(p => (
                 <button key={p.id} onClick={() => handleAccuse(p.id)} className="bg-white/5 p-5 rounded-2xl text-xl font-bold text-white hover:bg-white/10 transition-colors border border-white/5 flex items-center justify-between">
                   {p.name} <Users size={20} className="text-white/20" />
                 </button>
               ))}
-              <button onClick={() => setShowVoteModal(false)} className="text-white/30 font-bold mt-6 text-sm hover:text-white/60 transition-colors">בטל פעולה</button>
             </div>
+            <button onClick={() => setShowVoteModal(false)} className="w-full text-white/30 font-bold mt-6 text-sm hover:text-white/60 transition-colors">בטל פעולה</button>
           </div>
         </div>
       )}

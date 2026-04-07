@@ -15,12 +15,9 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinRoom }) => {
   const [preloadedCount, setPreloadedCount] = useState(0);
 
   useEffect(() => {
-    // מזהה אם השחקן נכנס דרך קישור מוואטסאפ ומושך את קוד החדר
     const params = new URLSearchParams(window.location.search);
     const roomFromUrl = params.get('room');
-    if (roomFromUrl) {
-      setCode(roomFromUrl);
-    }
+    if (roomFromUrl) setCode(roomFromUrl);
   }, []);
 
   useEffect(() => {
@@ -39,12 +36,9 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinRoom }) => {
     try {
       const roomCode = generateRoomCode();
       const playerId = Math.random().toString(36).substring(7);
-      
       await set(ref(db, `rooms/${roomCode}`), {
         meta: { status: 'waiting', hostId: playerId },
-        players: {
-          [playerId]: { id: playerId, name, score: 0, isHost: true }
-        }
+        players: { [playerId]: { id: playerId, name, score: 0, isHost: true } }
       });
       onJoinRoom(roomCode, playerId, true);
     } catch (e) { alert("שגיאה בחיבור"); }
@@ -62,27 +56,19 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinRoom }) => {
       if (isQA) {
         const dummy1Id = 'qa1_' + Math.random().toString(36).substring(7);
         const dummy2Id = 'qa2_' + Math.random().toString(36).substring(7);
-        
-        const playersData: any = {
-          [playerId]: { id: playerId, name, score: 0, isHost: true },
-          [dummy1Id]: { id: dummy1Id, name: 'בוט בדיקות 1', score: 0, isHost: false },
-          [dummy2Id]: { id: dummy2Id, name: 'בוט בדיקות 2', score: 0, isHost: false }
-        };
-
         await set(ref(db, `rooms/${roomCode}`), {
           meta: { status: 'waiting', hostId: playerId },
-          players: playersData
+          players: {
+            [playerId]: { id: playerId, name, score: 0, isHost: true },
+            [dummy1Id]: { id: dummy1Id, name: 'בוט בדיקות 1', score: 0, isHost: false },
+            [dummy2Id]: { id: dummy2Id, name: 'בוט בדיקות 2', score: 0, isHost: false }
+          }
         });
         onJoinRoom(roomCode, playerId, true);
       } else {
         const snapshot = await get(ref(db, `rooms/${roomCode}`));
-        if (!snapshot.exists()) {
-          setLoading(false);
-          return alert("החדר לא נמצא!");
-        }
-        await update(ref(db, `rooms/${roomCode}/players/${playerId}`), {
-          id: playerId, name, score: 0, isHost: false
-        });
+        if (!snapshot.exists()) { setLoading(false); return alert("החדר לא נמצא!"); }
+        await update(ref(db, `rooms/${roomCode}/players/${playerId}`), { id: playerId, name, score: 0, isHost: false });
         onJoinRoom(roomCode, playerId, false);
       }
     } catch (e) { alert("שגיאה בהצטרפות"); }
@@ -90,33 +76,45 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinRoom }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-blue-50 p-4 text-center" dir="rtl">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 space-y-6">
-        <h1 className="text-4xl font-black text-blue-800">הַמִּתְחַזֶּה</h1>
-        <input
-          type="text"
-          placeholder="הַשֵּׁם שֶׁלְּךָ..."
-          className="w-full p-5 text-2xl border-4 border-blue-100 rounded-2xl outline-none text-center"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <button onClick={createNewRoom} disabled={loading} className="w-full bg-green-500 text-white font-bold py-6 rounded-2xl text-3xl shadow-lg active:scale-95 flex items-center justify-center gap-2">
-          {loading ? <Loader2 className="animate-spin" /> : <Plus size={32} />} יְצִירַת חֶדֶר
-        </button>
-        <div className="text-gray-300 font-bold">אוֹ</div>
-        <input
-          type="text"
-          placeholder="מִילַת הַחֶדֶר (למשל: חתול25)"
-          className="w-full p-5 text-2xl border-4 border-orange-100 rounded-2xl outline-none text-center"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-        />
-        <button onClick={joinExistingRoom} disabled={loading} className="w-full bg-orange-500 text-white font-bold py-6 rounded-2xl text-3xl shadow-lg active:scale-95 flex items-center justify-center gap-2">
-          <LogIn size={32} /> הִצְטָרְפוּת
-        </button>
-        {preloadedCount > 0 && (
-          <div className="flex items-center justify-center gap-2 text-blue-400 text-sm">
-            <DownloadCloud size={16} /> <span>טוען תמונות... ({preloadedCount}/{situations.length})</span>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 p-6 text-center" dir="rtl">
+      <div className="w-full max-w-md space-y-8">
+        <div className="flex flex-col items-center gap-4 mb-4">
+          <img src="/icon.png" className="w-24 h-24 rounded-3xl shadow-2xl border-4 border-white/10" alt="logo" />
+          <h1 className="text-5xl font-black text-white tracking-tighter italic">הַמִּתְחַזֶּה</h1>
+        </div>
+
+        <div className="bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-white/10 p-8 shadow-2xl space-y-6">
+          <input
+            type="text"
+            placeholder="איך קוראים לך?"
+            className="w-full p-5 text-xl bg-white/5 border border-white/10 rounded-2xl outline-none text-center text-white placeholder-white/20 focus:border-indigo-500/50 transition-all"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <button onClick={createNewRoom} disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-5 rounded-2xl text-2xl shadow-lg active:scale-95 flex items-center justify-center gap-3 transition-all">
+            {loading ? <Loader2 className="animate-spin" /> : <Plus size={28} />} יצירת חדר
+          </button>
+          
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+            <div className="relative flex justify-center text-xs uppercase tracking-widest"><span className="bg-slate-900 px-3 text-white/20 font-bold">או הצטרפות</span></div>
+          </div>
+
+          <input
+            type="text"
+            placeholder="קוד חדר (למשל: חתול25)"
+            className="w-full p-5 text-xl bg-white/5 border border-white/10 rounded-2xl outline-none text-center text-white placeholder-white/20 focus:border-amber-500/50 transition-all"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+          />
+          <button onClick={joinExistingRoom} disabled={loading} className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-5 rounded-2xl text-2xl border border-white/10 shadow-lg active:scale-95 flex items-center justify-center gap-3 transition-all">
+            <LogIn size={28} /> כניסה לחדר
+          </button>
+        </div>
+
+        {preloadedCount > 0 && preloadedCount < situations.length && (
+          <div className="flex items-center justify-center gap-2 text-white/20 text-xs font-bold uppercase tracking-widest">
+            <DownloadCloud size={14} className="animate-bounce" /> <span>טוען משאבים... {preloadedCount}/{situations.length}</span>
           </div>
         )}
       </div>
