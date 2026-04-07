@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { db } from './firebase';
 import { ref, onValue, update, remove } from 'firebase/database';
-import { AlertTriangle, Lightbulb, EyeOff, Trophy, Users, X } from 'lucide-react';
+import { AlertTriangle, Lightbulb, EyeOff, Trophy, Users, X, Play } from 'lucide-react';
 import { situations } from './data';
 
-interface GameBoardProps { roomId: string; playerId: string; }
+interface GameBoardProps { roomId: string; playerId: string; isHost: boolean; }
 
-const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId }) => {
+const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
   const [gameData, setGameData] = useState<any>(null);
   const [showVoteModal, setShowVoteModal] = useState(false);
   const [showGuessModal, setShowGuessModal] = useState(false);
@@ -61,11 +61,14 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId }) => {
       else roles[p.id] = { role: randomSituation.roles[Math.floor(Math.random() * randomSituation.roles.length)], isImposter: false };
     });
 
+    // תיקון קריטי ל-Firebase: שימוש ב-null במקום {} לאיפוס נתונים
     await update(ref(db, `rooms/${roomId}`), {
       "meta/status": 'playing',
       "meta/currentSituation": randomSituation,
       "meta/lastWinner": null,
-      "game": { roles, playersOut: {}, roundDeltas: {} }
+      "game/roles": roles,
+      "game/playersOut": null,
+      "game/roundDeltas": null
     });
   };
 
@@ -120,12 +123,12 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId }) => {
   if (winner) {
     return (
       <div className="fixed inset-0 bg-yellow-400 flex flex-col items-center justify-center p-6 z-[100] text-center" dir="rtl">
-        <button onClick={handleFinalExit} className="absolute top-6 left-6 bg-white/20 p-4 rounded-full">
-          <X size={50} className="text-white" />
-        </button>
         <Trophy size={140} className="text-white animate-bounce mb-6" />
         <h1 className="text-6xl font-black text-white mb-4 italic">נִיצָּחוֹן!</h1>
         <p className="text-5xl font-bold text-yellow-900 mb-10">{winner.name} נִיצֵּחַ!</p>
+        <button onClick={handleFinalExit} className="bg-white/30 text-white font-black text-2xl py-4 px-10 rounded-3xl shadow-xl active:scale-95 transition-all">
+          סַיֵּם מִשְׂחָק וַחֲזוֹר לַלּוֹבִּי
+        </button>
       </div>
     );
   }
@@ -133,15 +136,12 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId }) => {
   if (gameData.meta.status === 'round_over') {
     return (
       <div className="min-h-screen bg-blue-700 flex flex-col items-center justify-center p-4 text-white relative" dir="rtl">
-        <button onClick={startNewRound} className="absolute top-6 left-6 bg-white/20 p-4 rounded-full z-50">
-          <X size={50} />
-        </button>
         <div className="w-full max-w-lg bg-white rounded-[40px] p-8 shadow-2xl text-blue-900">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-blue-500 mb-2 italic">{gameData.meta.lastWinner}</h2>
             <h1 className="text-5xl font-black italic">טַבְלַת הַנִּקּוּד</h1>
           </div>
-          <div className="space-y-4 mb-4">
+          <div className="space-y-4 mb-8">
             {players.sort((a,b) => (b.score || 0) - (a.score || 0)).map((p, idx) => {
               const delta = gameData.game.roundDeltas?.[p.id] || 0;
               return (
@@ -162,6 +162,17 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId }) => {
               );
             })}
           </div>
+          
+          {/* כפתור ברור וגדול להמשך, מופיע רק למנהל החדר */}
+          {isHost ? (
+            <button onClick={startNewRound} className="w-full bg-green-500 text-white py-6 rounded-3xl text-3xl font-black shadow-xl flex items-center justify-center gap-4 active:scale-95 transition-all">
+              <Play size={32} fill="currentColor" /> הַמְשֵׁךְ לַסִּיבּוּב הַבָּא
+            </button>
+          ) : (
+            <p className="text-2xl font-bold text-center text-blue-300 animate-pulse italic mt-4">
+              מְחַכִּים שֶׁהַמְּנַהֵל יַמְשִׁיךְ...
+            </p>
+          )}
         </div>
       </div>
     );

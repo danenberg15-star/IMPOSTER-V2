@@ -43,8 +43,8 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-hidden">
-      {/* כפתור יציאה - עבר לצד שמאל למטה */}
-      {roomData && (
+      {/* כפתור יציאה גלובלי מתחבא במסך הסיום כדי לא לבלבל */}
+      {roomData && gameStatus !== 'round_over' && (
         <button 
           onClick={handleExit} 
           className="fixed bottom-6 left-6 z-[150] bg-red-100 text-red-600 p-4 rounded-2xl font-black border-2 border-red-200 shadow-lg active:scale-95 transition-all"
@@ -63,7 +63,7 @@ function App() {
         gameStatus === 'waiting' ? (
           <WaitingRoom roomId={roomData.roomId} playerId={roomData.playerId} isHost={roomData.isHost} />
         ) : (
-          <GameBoard roomId={roomData.roomId} playerId={roomData.playerId} />
+          <GameBoard roomId={roomData.roomId} playerId={roomData.playerId} isHost={roomData.isHost} />
         )
       )}
     </div>
