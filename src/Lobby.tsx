@@ -30,9 +30,23 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinRoom }) => {
     try {
       const roomCode = generateRoomCode();
       const playerId = Math.random().toString(36).substring(7);
+      
+      // הגדרת משתמשי דמה אם הוזנה מילת הקסם ל-QA
+      const isQA = name.trim() === 'עומר';
+      const playersData: any = {
+        [playerId]: { id: playerId, name, score: 0, isHost: true }
+      };
+
+      if (isQA) {
+        const dummy1Id = 'qa1_' + Math.random().toString(36).substring(7);
+        const dummy2Id = 'qa2_' + Math.random().toString(36).substring(7);
+        playersData[dummy1Id] = { id: dummy1Id, name: 'בוט בדיקות 1', score: 0, isHost: false };
+        playersData[dummy2Id] = { id: dummy2Id, name: 'בוט בדיקות 2', score: 0, isHost: false };
+      }
+
       await set(ref(db, `rooms/${roomCode}`), {
         meta: { status: 'waiting', hostId: playerId },
-        players: { [playerId]: { id: playerId, name, score: 0, isHost: true } }
+        players: playersData
       });
       onJoinRoom(roomCode, playerId, true);
     } catch (e) { alert("שגיאה בחיבור"); }
