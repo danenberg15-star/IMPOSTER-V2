@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { db } from './firebase';
 import { ref, onValue, update, remove } from 'firebase/database';
-import { AlertTriangle, Lightbulb, EyeOff, Trophy, Users, X, Play } from 'lucide-react';
+import { AlertTriangle, Lightbulb, EyeOff, Trophy, Users, X, Play, ShieldCheck } from 'lucide-react';
 import { situations } from './data';
 
 interface GameBoardProps { roomId: string; playerId: string; isHost: boolean; }
@@ -23,7 +23,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
           const outCount = Object.keys(data.game?.playersOut || {}).length;
           const activeCount = playersArr.length - outCount;
 
-          // תיקון קריטי: רק מנהל החדר מריץ את הניצחון כדי למנוע חלוקת ניקוד כפולה
           if (isHost && activeCount <= 2 && data.meta.status !== 'round_over') {
             handleImposterWinByElimination(data);
           }
@@ -40,19 +39,17 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
         [`players/${imposterId}/score`]: currentScore + 40,
         [`game/roundDeltas/${imposterId}`]: 40,
         "meta/status": 'round_over',
-        "meta/lastWinner": 'הַמִּתְחַזֶּה נִיצֵּחַ! כֻּלָּם טָעוּ בַּדֶּרֶךְ.'
+        "meta/lastWinner": 'הַמִּתְחַזֶּה נִיצֵּחַ! הַצַּוָּת חוסל.'
       });
     }
   };
 
-  if (!gameData || !gameData.game?.roles) return <div className="p-10 text-center text-2xl font-bold">טּוֹעֵן...</div>;
+  if (!gameData || !gameData.game?.roles) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white text-xl animate-pulse italic">טוען נתונים...</div>;
 
   const myRole = gameData.game.roles[playerId];
   const isOut = gameData.game.playersOut?.[playerId];
   const situation = gameData.meta.currentSituation;
   const players = Object.values(gameData.players) as any[];
-  
-  // תיקון: אם כמה הגיעו ל-100, המנצח הוא זה עם הניקוד הגבוה ביותר
   const winner = players.filter(p => (p.score || 0) >= 100).sort((a,b) => (b.score || 0) - (a.score || 0))[0];
 
   const startNewRound = async () => {
@@ -77,19 +74,17 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
   const handleAccuse = async (targetId: string) => {
     setShowVoteModal(false);
     const isTargetImposter = gameData.game.roles[targetId].isImposter;
+    const currentScore = gameData.players[playerId].score || 0;
     
     if (isTargetImposter) {
-      const currentScore = gameData.players[playerId].score || 0;
       await update(ref(db, `rooms/${roomId}`), {
         [`players/${playerId}/score`]: currentScore + 40,
         [`game/roundDeltas/${playerId}`]: 40,
         "meta/status": 'round_over',
-        "meta/lastWinner": `כָּל הַכָּבוֹד לְ-${gameData.players[playerId].name}! הַמִּתְחַזֶּה נִתְפַּס!`
+        "meta/lastWinner": `המשימה הושלמה! המתחזה נחשף ע"י ${gameData.players[playerId].name}.`
       });
     } else {
-      const currentScore = gameData.players[playerId].score || 0;
       await update(ref(db, `rooms/${roomId}`), {
-        // הוסר עיגול הניקוד לאפס - הניקוד יכול לרדת למינוס
         [`players/${playerId}/score`]: currentScore - 20,
         [`game/roundDeltas/${playerId}`]: -20,
         [`game/playersOut/${playerId}`]: true
@@ -107,26 +102,21 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
         [`players/${playerId}/score`]: currentScore + 40,
         [`game/roundDeltas/${playerId}`]: 40,
         "meta/status": 'round_over',
-        "meta/lastWinner": 'הַמִּתְחַזֶּה נִיצֵּחַ! הוּא יָדַע אֶת הַמָּקוֹם.'
+        "meta/lastWinner": 'הַמִּתְחַזֶּה נִיצֵּחַ! הוא ידע בדיוק איפה אתם.'
       });
     } else {
       const updates: any = {
         "meta/status": 'round_over',
-        "meta/lastWinner": 'הַמִּתְחַזֶּה טָעָה בַּמָּקוֹם! הַשְּׁאָר נִיצְּחוּ.',
-        // הוסר עיגול הניקוד לאפס - הניקוד יכול לרדת למינוס
+        "meta/lastWinner": 'הַמִּתְחַזֶּה נכשל בזיהוי המיקום! ניצחון לצוות.',
         [`players/${playerId}/score`]: currentScore - 20,
         [`game/roundDeltas/${playerId}`]: -20
       };
-
       players.forEach(p => {
-        // תיקון קריטי: מעניקים 10+ רק למי שאינו המתחזה, ורק למי שלא נפסל קודם לכן בסיבוב
         if (p.id !== playerId && !gameData.game.playersOut?.[p.id]) {
-          const pScore = p.score || 0;
-          updates[`players/${p.id}/score`] = pScore + 10;
+          updates[`players/${p.id}/score`] = (p.score || 0) + 10;
           updates[`game/roundDeltas/${p.id}`] = 10;
         }
       });
-
       await update(ref(db, `rooms/${roomId}`), updates);
     }
   };
@@ -137,136 +127,174 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
     window.location.reload();
   };
 
+  // תצוגת ניצחון סופי
   if (winner) {
     return (
-      <div className="fixed inset-0 bg-yellow-400 flex flex-col items-center justify-center p-6 z-[100] text-center" dir="rtl">
-        <Trophy size={140} className="text-white animate-bounce mb-6" />
-        <h1 className="text-6xl font-black text-white mb-4 italic">נִיצָּחוֹן!</h1>
-        <p className="text-5xl font-bold text-yellow-900 mb-10">{winner.name} נִיצֵּחַ!</p>
-        <button onClick={handleFinalExit} className="bg-white/30 text-white font-black text-2xl py-4 px-10 rounded-3xl shadow-xl active:scale-95 transition-all">
-          סַיֵּם מִשְׂחָק וַחֲזוֹר לַלּוֹבִּי
+      <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center p-6 z-[100] text-center" dir="rtl">
+        <div className="absolute inset-0 bg-gradient-to-b from-amber-500/20 to-transparent pointer-events-none"></div>
+        <Trophy size={120} className="text-amber-400 mb-6 drop-shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
+        <h1 className="text-5xl font-black text-white mb-2 tracking-tighter">הַמְּנַצֵּחַ הַגָּדוֹל</h1>
+        <p className="text-6xl font-bold text-amber-400 mb-12 drop-shadow-sm">{winner.name}</p>
+        <button onClick={handleFinalExit} className="relative z-10 bg-white text-slate-950 font-bold text-xl py-4 px-12 rounded-full shadow-2xl active:scale-95 transition-all">
+          סיום משחק
         </button>
       </div>
     );
   }
 
+  // תצוגת סיכום סיבוב (Leaderboard)
   if (gameData.meta.status === 'round_over') {
     return (
-      <div className="min-h-screen bg-blue-700 flex flex-col items-center justify-center p-4 text-white relative" dir="rtl">
-        <div className="w-full max-w-lg bg-white rounded-[40px] p-8 shadow-2xl text-blue-900">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-white" dir="rtl">
+        <div className="w-full max-w-md bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-white/10 p-8 shadow-2xl">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-blue-500 mb-2 italic">{gameData.meta.lastWinner}</h2>
-            <h1 className="text-5xl font-black italic">טַבְלַת הַנִּקּוּד</h1>
+            <p className="text-amber-400 font-medium mb-2 tracking-wide uppercase text-sm">{gameData.meta.lastWinner}</p>
+            <h1 className="text-4xl font-black tracking-tight italic">טבלת ניקוד</h1>
           </div>
-          <div className="space-y-4 mb-8">
+          <div className="space-y-3 mb-10">
             {players.sort((a,b) => (b.score || 0) - (a.score || 0)).map((p, idx) => {
               const delta = gameData.game.roundDeltas?.[p.id] || 0;
               return (
-                <div key={p.id} className="flex justify-between items-center bg-blue-50 p-5 rounded-2xl border-2 border-blue-100">
+                <div key={p.id} className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
                   <div className="flex items-center gap-4">
-                    <span className="text-2xl font-black opacity-30">{idx + 1}</span>
-                    <span className="text-3xl font-bold">{p.name}</span>
+                    <span className="text-lg font-bold text-white/20">#{idx + 1}</span>
+                    <span className="text-xl font-bold">{p.name}</span>
                   </div>
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4">
                     {delta !== 0 && (
-                      <div className={`px-3 py-1 rounded-full font-black text-xl text-white ${delta > 0 ? 'bg-green-500' : 'bg-red-500'}`}>
+                      <span className={`text-sm font-bold ${delta > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {delta > 0 ? `+${delta}` : delta}
-                      </div>
+                      </span>
                     )}
-                    <span className="text-4xl font-black text-blue-800">{p.score || 0}</span>
+                    <span className="text-2xl font-black text-white">{p.score || 0}</span>
                   </div>
                 </div>
               );
             })}
           </div>
-          
           {isHost ? (
-            <button onClick={startNewRound} className="w-full bg-green-500 text-white py-6 rounded-3xl text-3xl font-black shadow-xl flex items-center justify-center gap-4 active:scale-95 transition-all">
-              <Play size={32} fill="currentColor" /> הַמְשֵׁךְ לַסִּיבּוּב הַבָּא
+            <button onClick={startNewRound} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-5 rounded-2xl text-xl font-bold shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95">
+              <Play size={24} fill="currentColor" /> סיבוב הבא
             </button>
           ) : (
-            <p className="text-2xl font-bold text-center text-blue-300 animate-pulse italic mt-4">
-              מְחַכִּים שֶׁהַמְּנַהֵל יַמְשִׁיךְ...
-            </p>
+            <div className="text-center py-4 bg-white/5 rounded-2xl border border-white/5 text-white/40 italic">ממתינים למנהל...</div>
           )}
         </div>
       </div>
     );
   }
 
+  // תצוגת פסול (Out)
   if (isOut) {
     return (
-      <div className="min-h-screen bg-red-50 flex flex-col items-center justify-center p-8 text-center" dir="rtl">
-        <div className="bg-white p-12 rounded-[50px] shadow-2xl">
-          <X size={140} className="text-red-500 mb-6 mx-auto" />
-          <h1 className="text-6xl font-black text-red-600 mb-4">אוֹי! טָעִיתָ!</h1>
-          <p className="text-3xl text-red-400 font-bold">נַחְכֶּה לַסִּיבּוּב הַבָּא...</p>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-8 text-center" dir="rtl">
+        <div className="w-full max-w-xs bg-rose-500/10 border border-rose-500/20 p-10 rounded-[3rem] backdrop-blur-md">
+          <div className="bg-rose-500/20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+            <X size={60} className="text-rose-500" />
+          </div>
+          <h1 className="text-4xl font-black text-white mb-3 tracking-tighter uppercase">הודחת!</h1>
+          <p className="text-rose-200/60 font-medium">האשמת שווא עלתה לך ביוקר.</p>
         </div>
       </div>
     );
   }
 
+  // תצוגת המשחק המרכזית
   return (
-    <div className="flex flex-col items-center min-h-screen bg-white p-4" dir="rtl">
-      <div className="w-full max-w-2xl aspect-video rounded-[40px] overflow-hidden shadow-2xl mb-6 border-8 border-blue-100 flex items-center justify-center bg-gray-50">
+    <div className="flex flex-col items-center min-h-screen bg-slate-950 p-4 pb-10" dir="rtl">
+      {/* Header עם לוגו */}
+      <div className="w-full max-w-md flex items-center justify-between py-4 px-2 mb-4">
+        <div className="flex items-center gap-2">
+           <img src="/icon.png" className="w-8 h-8 rounded-lg" alt="logo" />
+           <span className="text-white font-black tracking-tighter text-xl">הַמִּתְחַזֶּה</span>
+        </div>
+        <div className="bg-white/5 px-4 py-1 rounded-full border border-white/10">
+           <span className="text-white/60 text-xs font-bold uppercase tracking-widest">משימה פעילה</span>
+        </div>
+      </div>
+
+      {/* תמונת המיקום */}
+      <div className="w-full max-w-md aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl mb-8 border border-white/10 bg-slate-900 relative group">
         {!myRole.isImposter ? (
-          <img src={situation.imageUrl} className="w-full h-full object-cover" alt="situation" />
+          <>
+            <img src={situation.imageUrl} className="w-full h-full object-cover opacity-80" alt="situation" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+            <div className="absolute bottom-6 right-8 left-8">
+               <h1 className="text-4xl font-black text-white tracking-tight drop-shadow-md">{situation.name}</h1>
+            </div>
+          </>
         ) : (
-          <div className="text-center">
-            <EyeOff size={100} className="text-red-400 mx-auto" />
-            <h2 className="text-4xl font-black text-red-600 italic">הַמָּקוֹם סוֹדִי!</h2>
+          <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center">
+            <div className="bg-rose-500/20 w-20 h-20 rounded-full flex items-center justify-center mb-4">
+              <EyeOff size={40} className="text-rose-500" />
+            </div>
+            <h2 className="text-2xl font-black text-white italic tracking-tighter">הַמָּקוֹם חָסוּי</h2>
+            <p className="text-rose-200/40 text-sm mt-2">נסה לגלות איפה כולם נמצאים לפי השאלות שלהם</p>
           </div>
         )}
       </div>
-      <div className="text-center w-full max-w-md">
-        {!myRole.isImposter && <h1 className="text-6xl font-black text-blue-900 mb-6">{situation.name}</h1>}
-        <div className={`p-8 rounded-[40px] shadow-lg border-4 ${myRole.isImposter ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
-          <p className="text-2xl font-bold mb-1 opacity-60 italic">הַתַּפְקִיד שֶׁלְּךָ:</p>
-          <p className={`text-6xl font-black ${myRole.isImposter ? 'text-red-600' : 'text-green-700'}`}>
-            {myRole.role}
-          </p>
+
+      {/* כרטיס תפקיד */}
+      <div className="w-full max-w-md">
+        <div className={`relative p-8 rounded-[2.5rem] border backdrop-blur-md overflow-hidden ${
+          myRole.isImposter 
+          ? 'bg-rose-500/5 border-rose-500/20 text-rose-500' 
+          : 'bg-indigo-500/5 border-indigo-500/20 text-indigo-400'
+        }`}>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-50 mb-1">זהות נוכחית</p>
+              <p className={`text-4xl font-black tracking-tighter leading-none ${myRole.isImposter ? 'text-white' : 'text-white'}`}>
+                {myRole.role}
+              </p>
+            </div>
+            {myRole.isImposter ? <AlertTriangle size={32} /> : <ShieldCheck size={32} />}
+          </div>
         </div>
+
+        {/* כפתורי פעולה */}
         <div className="mt-8 grid gap-4">
           {!myRole.isImposter ? (
-            <button onClick={() => setShowVoteModal(true)} className="bg-red-500 text-white py-6 rounded-3xl text-4xl font-black shadow-xl">
-              <AlertTriangle size={40} className="inline ml-2" /> חֲשׂוֹף מִתְחַזֶּה!
+            <button onClick={() => setShowVoteModal(true)} className="bg-white text-slate-950 py-5 rounded-2xl text-xl font-bold shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
+              <AlertTriangle size={24} /> חשיפת המתחזה
             </button>
           ) : (
-            <button onClick={() => setShowGuessModal(true)} className="bg-yellow-400 text-yellow-900 py-6 rounded-3xl text-4xl font-black shadow-xl">
-              <Lightbulb size={40} className="inline ml-2" /> אֲנִי יוֹדֵעַ אֶת הַמָּקוֹם!
+            <button onClick={() => setShowGuessModal(true)} className="bg-amber-400 text-amber-950 py-5 rounded-2xl text-xl font-bold shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
+              <Lightbulb size={24} /> ניחוש המקום
             </button>
           )}
         </div>
       </div>
 
+      {/* מודאלים מעוצבים - Dark Glass */}
       {showVoteModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-50">
-          <div className="bg-white w-full max-w-sm rounded-[40px] p-8 text-center shadow-2xl">
-            <h2 className="text-3xl font-black mb-6 text-blue-800">מִי הַמִּתְחַזֶּה?</h2>
-            <div className="grid gap-3">
+        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-6 z-[60]">
+          <div className="bg-slate-900 w-full max-w-sm rounded-[3rem] p-8 border border-white/10 shadow-2xl">
+            <h2 className="text-2xl font-black mb-6 text-white text-center italic tracking-tighter uppercase">בחר את החשוד</h2>
+            <div className="grid gap-2">
               {players.filter(p => p.id !== playerId && !gameData.game.playersOut?.[p.id]).map(p => (
-                <button key={p.id} onClick={() => handleAccuse(p.id)} className="bg-blue-50 p-6 rounded-2xl text-3xl font-bold hover:bg-blue-100 flex items-center justify-center gap-3">
-                  <Users size={28} /> {p.name}
+                <button key={p.id} onClick={() => handleAccuse(p.id)} className="bg-white/5 p-5 rounded-2xl text-xl font-bold text-white hover:bg-white/10 transition-colors border border-white/5 flex items-center justify-between">
+                  {p.name} <Users size={20} className="text-white/20" />
                 </button>
               ))}
-              <button onClick={() => setShowVoteModal(false)} className="text-gray-400 font-bold underline mt-6 text-xl">בִּיטּוּל</button>
+              <button onClick={() => setShowVoteModal(false)} className="text-white/30 font-bold mt-6 text-sm hover:text-white/60 transition-colors">בטל פעולה</button>
             </div>
           </div>
         </div>
       )}
 
       {showGuessModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-white w-full max-w-md rounded-[40px] p-8 text-center flex flex-col max-h-[85vh] shadow-2xl">
-            <h2 className="text-4xl font-black mb-6 text-orange-600 italic">אֵיפֹה אֲנַחְנוּ?</h2>
-            <div className="grid gap-2 overflow-y-auto pr-2">
+        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
+          <div className="bg-slate-900 w-full max-w-md rounded-[3rem] p-8 flex flex-col max-h-[80vh] border border-white/10 shadow-2xl">
+            <h2 className="text-2xl font-black mb-6 text-amber-400 text-center uppercase italic tracking-tighter">לאן הגענו?</h2>
+            <div className="grid gap-2 overflow-y-auto pr-2 custom-scrollbar">
               {situations.map(s => (
-                <button key={s.id} onClick={() => handleGuessLocation(s.id)} className="bg-orange-50 p-5 rounded-2xl text-2xl font-bold border-2 border-orange-100 hover:bg-orange-200">
+                <button key={s.id} onClick={() => handleGuessLocation(s.id)} className="bg-white/5 p-4 rounded-xl text-lg font-bold text-white hover:bg-white/10 border border-white/5 transition-all">
                   {s.name}
                 </button>
               ))}
             </div>
-            <button onClick={() => setShowGuessModal(false)} className="mt-6 text-gray-400 font-bold underline text-xl">סְגִירָה</button>
+            <button onClick={() => setShowGuessModal(false)} className="mt-6 text-white/30 font-bold text-sm hover:text-white/60">חזור למשחק</button>
           </div>
         </div>
       )}
