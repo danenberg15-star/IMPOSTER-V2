@@ -61,7 +61,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
       else roles[p.id] = { role: randomSituation.roles[Math.floor(Math.random() * randomSituation.roles.length)], isImposter: false };
     });
 
-    // תיקון קריטי ל-Firebase: שימוש ב-null במקום {} לאיפוס נתונים
     await update(ref(db, `rooms/${roomId}`), {
       "meta/status": 'playing',
       "meta/currentSituation": randomSituation,
@@ -87,8 +86,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
     } else {
       const currentScore = gameData.players[playerId].score || 0;
       await update(ref(db, `rooms/${roomId}`), {
-        [`players/${playerId}/score`]: Math.max(0, currentScore - 10),
-        [`game/roundDeltas/${playerId}`]: -10,
+        [`players/${playerId}/score`]: Math.max(0, currentScore - 20),
+        [`game/roundDeltas/${playerId}`]: -20,
         [`game/playersOut/${playerId}`]: true
       });
     }
@@ -107,10 +106,22 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
         "meta/lastWinner": 'הַמִּתְחַזֶּה נִיצֵּחַ! הוּא יָדַע אֶת הַמָּקוֹם.'
       });
     } else {
-      await update(ref(db, `rooms/${roomId}`), {
+      const updates: any = {
         "meta/status": 'round_over',
-        "meta/lastWinner": 'הַמִּתְחַזֶּה טָעָה בַּמָּקוֹם! הַשְּׁאָר נִיצְּחוּ.'
+        "meta/lastWinner": 'הַמִּתְחַזֶּה טָעָה בַּמָּקוֹם! הַשְּׁאָר נִיצְּחוּ.',
+        [`players/${playerId}/score`]: Math.max(0, currentScore - 20),
+        [`game/roundDeltas/${playerId}`]: -20
+      };
+
+      players.forEach(p => {
+        if (p.id !== playerId) {
+          const pScore = p.score || 0;
+          updates[`players/${p.id}/score`] = pScore + 10;
+          updates[`game/roundDeltas/${p.id}`] = 10;
+        }
       });
+
+      await update(ref(db, `rooms/${roomId}`), updates);
     }
   };
 
@@ -163,7 +174,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
             })}
           </div>
           
-          {/* כפתור ברור וגדול להמשך, מופיע רק למנהל החדר */}
           {isHost ? (
             <button onClick={startNewRound} className="w-full bg-green-500 text-white py-6 rounded-3xl text-3xl font-black shadow-xl flex items-center justify-center gap-4 active:scale-95 transition-all">
               <Play size={32} fill="currentColor" /> הַמְשֵׁךְ לַסִּיבּוּב הַבָּא
