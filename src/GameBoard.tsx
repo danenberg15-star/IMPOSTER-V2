@@ -23,13 +23,14 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
           const outCount = Object.keys(data.game?.playersOut || {}).length;
           const activeCount = playersArr.length - outCount;
 
-          if (activeCount <= 2 && data.meta.status !== 'round_over') {
+          // תיקון קריטי: רק מנהל החדר מריץ את הניצחון כדי למנוע חלוקת ניקוד כפולה
+          if (isHost && activeCount <= 2 && data.meta.status !== 'round_over') {
             handleImposterWinByElimination(data);
           }
         }
       }
     });
-  }, [roomId]);
+  }, [roomId, isHost]);
 
   const handleImposterWinByElimination = async (data: any) => {
     const imposterId = Object.keys(data.game.roles).find(id => data.game.roles[id].isImposter);
@@ -50,7 +51,9 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
   const isOut = gameData.game.playersOut?.[playerId];
   const situation = gameData.meta.currentSituation;
   const players = Object.values(gameData.players) as any[];
-  const winner = players.find(p => (p.score || 0) >= 100);
+  
+  // תיקון: אם כמה הגיעו ל-100, המנצח הוא זה עם הניקוד הגבוה ביותר
+  const winner = players.filter(p => (p.score || 0) >= 100).sort((a,b) => (b.score || 0) - (a.score || 0))[0];
 
   const startNewRound = async () => {
     const randomSituation = situations[Math.floor(Math.random() * situations.length)];
@@ -114,7 +117,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
       };
 
       players.forEach(p => {
-        if (p.id !== playerId) {
+        // תיקון קריטי: מעניקים 10+ רק למי שאינו המתחזה, ורק למי שלא נפסל קודם לכן בסיבוב
+        if (p.id !== playerId && !gameData.game.playersOut?.[p.id]) {
           const pScore = p.score || 0;
           updates[`players/${p.id}/score`] = pScore + 10;
           updates[`game/roundDeltas/${p.id}`] = 10;
