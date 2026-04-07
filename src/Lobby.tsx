@@ -15,6 +15,15 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinRoom }) => {
   const [preloadedCount, setPreloadedCount] = useState(0);
 
   useEffect(() => {
+    // מזהה אם השחקן נכנס דרך קישור מוואטסאפ ומושך את קוד החדר
+    const params = new URLSearchParams(window.location.search);
+    const roomFromUrl = params.get('room');
+    if (roomFromUrl) {
+      setCode(roomFromUrl);
+    }
+  }, []);
+
+  useEffect(() => {
     if (name.length >= 2 && preloadedCount === 0) {
       situations.forEach((sit) => {
         const img = new Image();
@@ -51,12 +60,11 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinRoom }) => {
       const playerId = Math.random().toString(36).substring(7);
 
       if (isQA) {
-        // יצירת חדר ה-QA
         const dummy1Id = 'qa1_' + Math.random().toString(36).substring(7);
         const dummy2Id = 'qa2_' + Math.random().toString(36).substring(7);
         
         const playersData: any = {
-          [playerId]: { id: playerId, name, score: 0, isHost: true }, // השחקן מצטרף כמנהל כדי להתחיל את המשחק
+          [playerId]: { id: playerId, name, score: 0, isHost: true },
           [dummy1Id]: { id: dummy1Id, name: 'בוט בדיקות 1', score: 0, isHost: false },
           [dummy2Id]: { id: dummy2Id, name: 'בוט בדיקות 2', score: 0, isHost: false }
         };
@@ -67,7 +75,6 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinRoom }) => {
         });
         onJoinRoom(roomCode, playerId, true);
       } else {
-        // הצטרפות רגילה
         const snapshot = await get(ref(db, `rooms/${roomCode}`));
         if (!snapshot.exists()) {
           setLoading(false);
