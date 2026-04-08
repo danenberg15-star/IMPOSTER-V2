@@ -29,6 +29,14 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
     });
   }, [roomId, isHost]);
 
+  // תיקון סנכרון מסכים: איפוס מודאלים ברגע שהסיבוב נגמר
+  useEffect(() => {
+    if (gameData?.meta?.status === 'round_over') {
+      setShowVoteModal(false);
+      setShowGuessModal(false);
+    }
+  }, [gameData?.meta?.status]);
+
   const handleImposterWinByElimination = async (data: any) => {
     const imposterId = Object.keys(data.game.roles).find(id => data.game.roles[id].isImposter);
     if (imposterId) {
@@ -73,7 +81,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
     const isTargetImposter = gameData.game.roles[targetId].isImposter;
     const currentScore = gameData.players[playerId].score || 0;
     if (isTargetImposter) {
-      // Updated scoring for successful accusation: +10 instead of +40
       await update(ref(db, `rooms/${roomId}`), {
         [`players/${playerId}/score`]: currentScore + 10,
         [`game/roundDeltas/${playerId}`]: 10,
@@ -203,7 +210,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
         </div>
       </div>
 
-      {/* תמונת המיקום / תצוגת מתחזה - מקסימום שטח לאייקון */}
+      {/* תמונת המיקום / תצוגת מתחזה */}
       <div className="w-full max-w-md aspect-square rounded-[3rem] overflow-hidden shadow-2xl mb-6 border border-white/10 bg-slate-900 relative">
         {!myRole.isImposter ? (
           <>
@@ -215,7 +222,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center p-6 bg-rose-950/20">
-            {/* האייקון הוגדל למקסימום המקום בתוך המסגרת ללא טקסט */}
             <img 
               src="/icon.png" 
               className="w-full h-full max-w-[85%] max-h-[85%] object-contain rounded-[3.5rem] shadow-[0_0_60px_rgba(225,29,72,0.4)] border-2 border-rose-500/20 animate-pulse" 
@@ -225,7 +231,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
         )}
       </div>
 
-      {/* כרטיס תפקיד - מרכוז מלא */}
+      {/* כרטיס תפקיד */}
       <div className="w-full max-w-md">
         <div className={`relative p-8 rounded-[3rem] border backdrop-blur-md overflow-hidden text-center ${
           myRole.isImposter 
