@@ -119,8 +119,8 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinRoom }) => {
             </div>
           )}
           
-          {/* Pixabay Attribution */}
-          <div className="flex items-center gap-2 text-white/10 text-[10px] font-bold uppercase tracking-[0.2em] transition-opacity hover:opacity-100">
+          {/* Pixabay Attribution - Updated Opacity to 40% */}
+          <div className="flex items-center gap-2 text-white/40 text-[10px] font-bold uppercase tracking-[0.2em] transition-opacity hover:opacity-100">
             <Camera size={12} />
             <span>תודה ל-Pixabay על התמונות המדהימות</span>
           </div>
