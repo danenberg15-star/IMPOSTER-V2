@@ -7,7 +7,8 @@ import { db } from './firebase';
 import { ref, onValue, remove } from 'firebase/database';
 
 function App() {
-  const [showRules, setShowRules] = useState(() => !localStorage.getItem('imposter_rules_seen'));
+  // שינוי: תמיד מתחיל כ-true כדי להציג את החוקים בכל כניסה
+  const [showRules, setShowRules] = useState(true);
   const [roomData, setRoomData] = useState<{ roomId: string; playerId: string; isHost: boolean } | null>(null);
   const [gameStatus, setGameStatus] = useState<'waiting' | 'playing' | 'round_over' | 'finished'>('waiting');
   
@@ -70,10 +71,8 @@ function App() {
     window.location.reload();
   };
 
-  if (showRules) return <RulesScreen onStart={() => {
-    localStorage.setItem('imposter_rules_seen', 'true');
-    setShowRules(false);
-  }} />;
+  // שינוי: רק מסתירים את המסך בלחיצה, בלי לשמור זיכרון בדפדפן
+  if (showRules) return <RulesScreen onStart={() => setShowRules(false)} />;
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-hidden">
