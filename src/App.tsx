@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Lobby from './Lobby';
 import WaitingRoom from './WaitingRoom';
 import GameBoard from './GameBoard';
@@ -10,6 +10,40 @@ function App() {
   const [showRules, setShowRules] = useState(() => !localStorage.getItem('imposter_rules_seen'));
   const [roomData, setRoomData] = useState<{ roomId: string; playerId: string; isHost: boolean } | null>(null);
   const [gameStatus, setGameStatus] = useState<'waiting' | 'playing' | 'round_over' | 'finished'>('waiting');
+  
+  // Ref לשמירת ה-Wake Lock
+  const wakeLockRef = useRef<any>(null);
+
+  // מנגנון השארת מסך דלוק (Wake Lock API)
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+        }
+      } catch (err) {
+        console.error("Wake Lock error:", err);
+      }
+    };
+
+    requestWakeLock();
+
+    const handleVisibilityChange = () => {
+      if (wakeLockRef.current !== null && document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release().catch(() => {});
+        wakeLockRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('imposter_session');
