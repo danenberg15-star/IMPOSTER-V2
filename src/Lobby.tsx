@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db, generateRoomCode } from './firebase';
 import { ref, get, update, set } from 'firebase/database';
-import { Plus, LogIn, DownloadCloud, Loader2 } from 'lucide-react';
+import { Plus, LogIn, DownloadCloud, Loader2, Camera } from 'lucide-react';
 import { situations } from './data';
 
 interface LobbyProps {
@@ -79,7 +79,6 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinRoom }) => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 p-6 text-center" dir="rtl">
       <div className="w-full max-w-md space-y-10">
         <div className="flex flex-col items-center gap-6">
-          {/* אייקון מוגדל משמעותית */}
           <img src="/icon.png" className="w-48 h-48 rounded-[3.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-4 border-white/10" alt="logo" />
           <h1 className="text-5xl font-black text-white tracking-tighter italic">הַמִּתְחַזֶּה</h1>
         </div>
@@ -113,11 +112,19 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinRoom }) => {
           </button>
         </div>
 
-        {preloadedCount > 0 && preloadedCount < situations.length && (
-          <div className="flex items-center justify-center gap-2 text-white/20 text-xs font-bold uppercase tracking-widest">
-            <DownloadCloud size={14} className="animate-bounce" /> <span>טוען משאבים... {preloadedCount}/{situations.length}</span>
+        <div className="flex flex-col items-center gap-4">
+          {preloadedCount > 0 && preloadedCount < situations.length && (
+            <div className="flex items-center justify-center gap-2 text-white/20 text-xs font-bold uppercase tracking-widest">
+              <DownloadCloud size={14} className="animate-bounce" /> <span>טוען משאבים... {preloadedCount}/{situations.length}</span>
+            </div>
+          )}
+          
+          {/* Pixabay Attribution */}
+          <div className="flex items-center gap-2 text-white/10 text-[10px] font-bold uppercase tracking-[0.2em] transition-opacity hover:opacity-100">
+            <Camera size={12} />
+            <span>תודה ל-Pixabay על התמונות המדהימות</span>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
