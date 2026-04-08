@@ -9,4 +9,21 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* מניעת בחירת טקסט בכל האפליקציה */
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+  
+  /* מניעת תפריט המערכת שקופץ בלחיצה ארוכה (מצוין למניעת שמירת תמונות בטעות) */
+  -webkit-touch-callout: none;
+  
+  /* ביטול ריבוע ההבהוב הכחול/אפור שמופיע בעת לחיצה על כפתורים במובייל */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* החזרת היכולת לבחור ולסמן טקסט אך ורק בתוך שדות הקלט בלובי */
+input, textarea {
+  -webkit-user-select: auto;
+  user-select: auto;
 }
