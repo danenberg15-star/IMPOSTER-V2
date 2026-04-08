@@ -73,9 +73,10 @@ const GameBoard: React.FC<GameBoardProps> = ({ roomId, playerId, isHost }) => {
     const isTargetImposter = gameData.game.roles[targetId].isImposter;
     const currentScore = gameData.players[playerId].score || 0;
     if (isTargetImposter) {
+      // Updated scoring for successful accusation: +10 instead of +40
       await update(ref(db, `rooms/${roomId}`), {
-        [`players/${playerId}/score`]: currentScore + 40,
-        [`game/roundDeltas/${playerId}`]: 40,
+        [`players/${playerId}/score`]: currentScore + 10,
+        [`game/roundDeltas/${playerId}`]: 10,
         "meta/status": 'round_over',
         "meta/lastWinner": `הַמִּתְחַזֶּה נֶחְשַׂף עַל יְדֵי ${gameData.players[playerId].name}!`
       });

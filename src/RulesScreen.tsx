@@ -22,7 +22,7 @@ const RulesScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
     { 
       icon: <Search size={24}/>, 
       title: "מטרת הצוות", 
-      text: "לחשוף את המתחזה. זיהוי נכון יעניק לכם 40+ נקודות. טעות בזיהוי תעלה לכם ב-20- נקודות והדחה מהסיבוב." 
+      text: "לחשוף את המתחזה. זיהוי נכון יעניק לכם 10+ נקודות. טעות בזיהוי תעלה לכם ב-20- נקודות והדחה מהסיבוב." 
     },
     { 
       icon: <Target size={24}/>, 
@@ -74,7 +74,7 @@ const RulesScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
           </button>
         </div>
         
-        <p className="text-white/20 text-xs font-bold uppercase tracking-widest">גרסה 2.0.1 • 2026</p>
+        <p className="text-white/20 text-xs font-bold uppercase tracking-widest">גרסה 2.0.2 • 2026</p>
       </div>
     </div>
   );
